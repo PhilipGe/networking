@@ -1,6 +1,6 @@
 class Interface:
 
-    def __init__(self, name: str | None, ip: str, cidr: int):
+    def __init__(self, name, ip, cidr):
         self.name = name
         self.ip = ip
         self.cidr = cidr
