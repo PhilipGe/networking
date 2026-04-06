@@ -50,7 +50,7 @@ def get_interfaces_of_current_machine_from_ip_a():
     return interfaces
 
 def get_interfaces_from_pty_shell(fd):
-    os.write(fd, 'ip a')
+    os.write(fd, ('ip a').encode())
 
     while True:
         try:
@@ -75,7 +75,7 @@ def get_interfaces_from_pty_shell(fd):
     return interfaces
 
 def _ssh_authenticate(fd,ssh_socket=None,username=None,password=None, added_flags=''):
-    if(ssh_socket is not None): os.write(f"ssh {username}@{ssh_socket.ip} -p {ssh_socket.port} " + added_flags)
+    if(ssh_socket is not None): os.write(fd, (f"ssh {username}@{ssh_socket.ip} -p {ssh_socket.port} " + added_flags).encode())
 
     buffer = ''
     while not (('password' in buffer) or ('(yes/no)' in buffer)):
@@ -142,7 +142,7 @@ def open_ssh_remote_tunnel(tunnel: Tunnel, username: str, password: str):
         _ssh_authenticate(fd, password)
 
 def scan_host_for_ips(fd, ip, ports):
-    os.write(fd, f'nc -z {ip} {ports}')
+    os.write(fd, (f'nc -z {ip} {ports}').encode())
     buffer = ''
     while True:
         try:
