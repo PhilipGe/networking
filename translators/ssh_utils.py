@@ -12,20 +12,29 @@ def open_ssh_shell(ssh_socket: Socket, username: str, password: str):
         os.execvp("ssh", ["ssh",f"{username}@{ssh_socket.ip} -p {ssh_socket.port}"])
     else:
         buffer = ''
-        while not ('password' in buffer):
+        while not (('password' in buffer) and ('(yes/no)' not in buffer)):
             try:
                 data = os.read(fd, 1024)
                 buffer += data.decode()
             except OSError:
                 break
         
+        if('(yes/no)' in buffer):
+            os.write(fd, ('yes\n').decode())
+            while not ('password' in buffer):
+                try:
+                    data = os.read(fd, 1024)
+                    buffer += data.decode()
+                except OSError:
+                    break
+            
         if('password' in buffer):
-            os.write(fd, password)
+            os.write(fd, (password+'\n').decode())
 
         while True:
             try:
                 data = os.read(fd, 1024)
                 if(not data): break
-                print(data.decode)
+                print(data.decode())
             except OSError:
                 break
