@@ -23,4 +23,4 @@ def address_space(addr: str, cidr: int):
     netaddr = addr_as_hex & netmask
     lastnetaddr = netaddr + hostmask
 
-    return list(map(ipv4_hex_to_str, range(netaddr, lastnetaddr+1)))
+    return list(map(ipv4_hex_to_str, range(netaddr+1, lastnetaddr)))

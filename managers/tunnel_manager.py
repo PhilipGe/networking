@@ -1,2 +1,7 @@
 class TunnelManager:
-    pass
+    
+    def __init__(self):
+        self.tunnels = []
+
+    def create_tunnel(self):
+        pass

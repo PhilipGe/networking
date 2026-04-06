@@ -14,7 +14,7 @@ def flush_buffer(fd, breakpattern=None, printBuf=False):
             data = os.read(fd, 1024)
             if(not data): break
             buffer += data.decode()
-            if(printBuf): print(data.decode())
+            if(printBuf): print(data.decode(), end='')
             if((breakpattern is not None) and (breakpattern in buffer)): break
         except OSError:
             break
@@ -51,14 +51,14 @@ def get_interfaces_of_current_machine_from_ip_a():
     return interfaces
 
 def get_interfaces_from_pty_shell(fd):
-    os.write(fd, ('ip a').encode())
+    os.write(fd, ('ip a\n').encode())
 
-    buffer = flush_buffer(fd)
+    buffer = flush_buffer(fd, '$', printBuf=True)
     matches: list[str] = re.findall(r'\n.*[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}.*\n',buffer)
 
     interfaces = []
     for m in matches:
-        s = m.split(' ')
+        s = m.strip().split(' ')
         ipv4wcidr = s[1].split('/')
         name = s[-1]
         ipv4 = ipv4wcidr[0]
@@ -68,7 +68,7 @@ def get_interfaces_from_pty_shell(fd):
     return interfaces
 
 def _ssh_authenticate(fd,ssh_socket=None,username=None,password=None, added_flags=''):
-    if(ssh_socket is not None): os.write(fd, (f"ssh {username}@{ssh_socket.ip} -p {ssh_socket.port} " + added_flags).encode())
+    if(ssh_socket is not None): os.write(fd, (f"ssh {username}@{ssh_socket.ip} -p {ssh_socket.port} " + added_flags + '\n').encode())
 
     buffer = ''
     while not (('password' in buffer) or ('(yes/no)' in buffer)):
@@ -128,22 +128,24 @@ def open_ssh_remote_tunnel(tunnel: Tunnel, username: str, password: str):
         _ssh_authenticate(fd, password)
 
 def scan_host_for_ips(fd, ip, ports):
-    os.write(fd, (f'nc -z {ip} {ports}').encode())
-    buffer = ''
-    while True:
-        try:
-            data = os.read(fd, 1024)
-            if(not data): break
-            buffer += data.decode()
-            print(data.decode())
-        except OSError:
-            break
-    
-    matches: list[str] = re.findall(r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}',buffer)
+    os.write(fd, f'./myscan.sh {ip} {ports}\n'.encode())
+    buffer = flush_buffer(fd, 'done', True)
+    matches: list[str] = re.findall(r'\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\] \d* ',buffer)
 
-    return list(matches)
+    socks = []
+    for m in matches:
+        s = m.strip().split(' ')
+        socks.append(Socket(
+            None, s[0].replace('[','').replace(']',''), int(s[1]), None
+        ))
+
+    return socks
 
 def scan_host(ssh_socket: Socket, username: str, password: str, ports='21-23 80'):
+    """
+    This can be ran off of BIH in order to capture machines exposed to a specific pivot. Exploration function. Returns a list of sockets
+    """
+
     pid, fd = pty.fork()
 
     if pid == 0:
@@ -158,8 +160,12 @@ def scan_host(ssh_socket: Socket, username: str, password: str, ports='21-23 80'
         else:
             addresses = []
             for i in interfaces:
+                if(i.ip == '127.0.0.1'): continue
                 addresses += address_space(i.ip, i.cidr)
             
+            found = []
             for ip in addresses:
-                scan_host_for_ips(fd2, ip, ports)
-                result = flush_buffer(fd, True)
+                ips_found = scan_host_for_ips(fd2, ip, ports)
+                found += ips_found
+            
+            print(list(map(str, found)))
