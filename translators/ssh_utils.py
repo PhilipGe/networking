@@ -3,7 +3,7 @@ import re
 import os
 
 from entities.interface import Interface
-from entities.port import Socket
+from entities.socket import Socket
 from entities.tunnel import Tunnel
 from translators.subnet_calculator import address_space
 

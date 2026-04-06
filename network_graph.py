@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from entities.host import Host
-from entities.port import Socket
+from entities.socket import Socket
 from entities.tunnel import Tunnel
 
 class NetworkGraph:

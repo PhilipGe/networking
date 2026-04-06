@@ -5,3 +5,6 @@ class Socket:
         self.ip = ip
         self.port = port
         self.service = service
+
+    def __str__(self):
+        return f"{self.ip}:{self.port}"
