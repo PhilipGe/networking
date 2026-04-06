@@ -1,10 +1,7 @@
-from entities.interface import Interface
-from entities.port import Socket
-
 class Host:
 
     def __init__(self):
-        self.interfaces: set[Interface] = {}
+        self.interfaces = {}
 
-    def add_interface(self, interface: Interface):
+    def add_interface(self, interface):
         self.interfaces.add(interface)

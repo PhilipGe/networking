@@ -1,10 +1,7 @@
-from entities.host import Host
-from entities.service_enum import Service
-
 class Socket:
     
-    def __init__(self, host: Host, ip: str, port: int, service: Service | None):
+    def __init__(self, host, ip, port, service):
         self.host = host
         self.ip = ip
-        self.ip = port
+        self.port = port
         self.service = service

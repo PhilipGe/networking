@@ -4,12 +4,12 @@ import os
 
 from entities.interface import Interface
 
-def get_interfaces_from_ip_a():
+def get_interfaces_of_current_machine_from_ip_a():
     
     pid, fd = pty.fork()
 
     if pid == 0:
-        os.execvp("bash", ["bash"])
+        os.execvp("ip", ["ip","a"])
     else:
         buffer = ''
         while True:
