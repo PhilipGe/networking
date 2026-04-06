@@ -7,7 +7,7 @@ from entities.port import Socket
 from entities.tunnel import Tunnel
 from translators.subnet_calculator import address_space
 
-def flush_buffer(fd, printBuf=False):
+def flush_buffer(fd, breakpattern=None, printBuf=False):
     buffer = ''
     while True:
         try:
@@ -15,6 +15,7 @@ def flush_buffer(fd, printBuf=False):
             if(not data): break
             buffer += data.decode()
             if(printBuf): print(data.decode())
+            if((breakpattern is not None) and (breakpattern in buffer)): break
         except OSError:
             break
     return buffer
@@ -52,15 +53,7 @@ def get_interfaces_of_current_machine_from_ip_a():
 def get_interfaces_from_pty_shell(fd):
     os.write(fd, ('ip a').encode())
 
-    while True:
-        try:
-            data = os.read(fd, 1024)
-            if not data:
-                break
-            buffer += data.decode()
-        except OSError:
-            break
-    
+    buffer = flush_buffer(fd)
     matches: list[str] = re.findall(r'\n.*[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}.*\n',buffer)
 
     interfaces = []
@@ -82,7 +75,6 @@ def _ssh_authenticate(fd,ssh_socket=None,username=None,password=None, added_flag
         try:
             data = os.read(fd, 1024)
             buffer += data.decode()
-            print(data.decode())
         except OSError:
             break
     
@@ -99,13 +91,7 @@ def _ssh_authenticate(fd,ssh_socket=None,username=None,password=None, added_flag
     if('password' in buffer):
         os.write(fd, (password+'\n').encode())
 
-    while True:
-        try:
-            data = os.read(fd, 1024)
-            if(not data): break
-            print(data.decode())
-        except OSError:
-            break
+    flush_buffer(fd, '$', printBuf=True)
 
 def open_ssh_shell(ssh_socket: Socket, username: str, password: str):
     pid, fd = pty.fork()
@@ -163,8 +149,8 @@ def scan_host(ssh_socket: Socket, username: str, password: str, ports='21-23 80'
     if pid == 0:
         os.execvp("bash", ["bash"])
     else:
-        _ssh_authenticate(fd,ssh_socket, username, password, '-D 9050') # At this point the shell will be in the target machine's ssh, with a dynamic tunnel
-        interfaces: list[Interface] = get_interfaces_from_pty_shell() # This will get every interface of the new host
+        _ssh_authenticate(fd, ssh_socket, username, password, '-D 9050') # At this point the shell will be in the target machine's ssh, with a dynamic tunnel
+        interfaces: list[Interface] = get_interfaces_from_pty_shell(fd) # This will get every interface of the new host
 
         pid2, fd2 = pty.fork()
         if pid2 == 0:
@@ -175,5 +161,5 @@ def scan_host(ssh_socket: Socket, username: str, password: str, ports='21-23 80'
                 addresses += address_space(i.ip, i.cidr)
             
             for ip in addresses:
-                scan_host_for_ips(fd, ip, ports)
+                scan_host_for_ips(fd2, ip, ports)
                 result = flush_buffer(fd, True)
