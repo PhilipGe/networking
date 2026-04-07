@@ -39,7 +39,7 @@ def get_interfaces_of_current_machine_from_ip_a():
     
     matches: list[str] = re.findall(r'\n.*[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}.*\n',buffer)
 
-    interfaces = []
+    interfaces: list[Interface] = []
     for m in matches:
         s = m.split(' ')
         ipv4wcidr = s[1].split('/')
@@ -132,7 +132,7 @@ def scan_host_for_ips(fd, ip, ports):
     buffer = flush_buffer(fd, 'done', True)
     matches: list[str] = re.findall(r'\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\] \d* ',buffer)
 
-    socks = []
+    socks: list[Socket] = []
     for m in matches:
         s = m.strip().split(' ')
         socks.append(Socket(
@@ -141,7 +141,7 @@ def scan_host_for_ips(fd, ip, ports):
 
     return socks
 
-def scan_host(ssh_socket: Socket, username: str, password: str, ports='21-23 80'):
+def scan_host(ssh_socket: Socket, username: str, password: str, ports='21-23 80') -> list[Socket]:
     """
     This can be ran off of BIH in order to capture machines exposed to a specific pivot. Exploration function. Returns a list of sockets
     """
@@ -163,9 +163,26 @@ def scan_host(ssh_socket: Socket, username: str, password: str, ports='21-23 80'
                 if(i.ip == '127.0.0.1'): continue
                 addresses += address_space(i.ip, i.cidr)
             
-            found = []
+            found: list[Socket] = []
             for ip in addresses:
                 ips_found = scan_host_for_ips(fd2, ip, ports)
                 found += ips_found
             
             print(list(map(str, found)))
+            return found
+        
+def open_socket_through_telnet(telnet_socket: Socket, pivot_ssh_socket: Socket, username: str, password: str):
+    """
+    Returns
+        (telnet machine's localhost socket)
+        (pivot's same interface ssh socket)
+    """
+    return 
+
+def open_socket_through_ssh(telnet_socket: Socket, pivot_ssh_socket: Socket, username: str, password: str):
+    """
+    Returns
+        (telnet machine's localhost socket)
+        (pivot's same interface ssh socket)
+    """
+    return 

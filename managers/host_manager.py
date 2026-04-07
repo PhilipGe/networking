@@ -1,2 +1,4 @@
 class HostManager:
-    pass
+    
+    def __init__(self):
+        self.hosts = []

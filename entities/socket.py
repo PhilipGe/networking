@@ -1,10 +1,11 @@
 class Socket:
     
-    def __init__(self, host, ip, port, service):
-        self.host = host
+    def __init__(self, ip, port):
         self.ip = ip
         self.port = port
-        self.service = service
+
+    def on_localhost(self):
+        return self.ip == '127.0.0.1' or self.ip == 'localhost'
 
     def __str__(self):
         return f"{self.ip}:{self.port}"
